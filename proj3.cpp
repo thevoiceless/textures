@@ -28,8 +28,9 @@ static const int MENU_SLOWER = 8;
 static const int MENU_FASTER = 9;
 static const int MENU_STOP_RUN = 10;
 static const double TWOPI = (2.0 * M_PI);
-// 3D texture file name
-string volumetricTextureFile = "marble.rgb";
+// File names
+string filename = "";
+string volumetricTextureFile = "textures/marble.rgb";
 // Counters
 int numTriangles = 0;
 int numVertices = 0;
@@ -51,6 +52,8 @@ double d = (1.0 / tan(toRadians(clippingFov / 2.0)));
 bool smoothShading = true;
 // Whether or not back-face culling is being used
 bool backFaceCulling = true;
+// Which texture to use
+bool useVolumetricTexture = false;
 // Centered at the origin
 const Vector center(0, 0, 0);
 // Point under the pixel
@@ -217,8 +220,14 @@ GLuint draw_model_flat()
 	{
 		glNormal3f(triangleNormals.at(i).x, triangleNormals.at(i).y, triangleNormals.at(i).z);
 		triangle t(triangleTable.at(i).v1, triangleTable.at(i).v2, triangleTable.at(i).v3);
+
+		glTexCoord3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
 		glVertex3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
+
+		glTexCoord3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
 		glVertex3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
+
+		glTexCoord3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
 		glVertex3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
 	}
 	glEnd();
@@ -233,25 +242,46 @@ GLuint draw_model_smooth()
 	{
 		triangle t(triangleTable.at(i).v1, triangleTable.at(i).v2, triangleTable.at(i).v3);
 
+		glTexCoord3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
 		glNormal3f(vertexNormals.at(t.v1).x, vertexNormals.at(t.v1).y, vertexNormals.at(t.v1).z);
 		glVertex3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
 
+		glTexCoord3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
 		glNormal3f(vertexNormals.at(t.v3).x, vertexNormals.at(t.v3).y, vertexNormals.at(t.v3).z);
 		glVertex3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
 
+		glTexCoord3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
 		glNormal3f(vertexNormals.at(t.v2).x, vertexNormals.at(t.v2).y, vertexNormals.at(t.v2).z);
 		glVertex3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
 	}
 	glEnd();
 }
 
+void draw_textures()
+{
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_3D);
+
+	glMatrixMode(GL_TEXTURE);
+	glLoadIdentity();
+	if (useVolumetricTexture)
+	{
+		glEnable(GL_TEXTURE_3D);
+		glScalef(1.0 / maxdim, 1.0 / maxdim, 1.0 / maxdim);
+		glTranslatef(-xmin, -ymin, -zmin);
+	}
+}
+
 // All cubes
 GLuint draw_scene()
 {
+	draw_textures();
+
 	set_material_properties(1.0,1.0,1.0);
 
-	// REVERSE ORDER
+	// REVERSE ORDER of operations, lower ones done first
 	glPushMatrix();
+		glMatrixMode(GL_MODELVIEW);
 		// Translation forward
 		glTranslatef(0, 0, -1.0 - d);
 		// Scale
@@ -446,6 +476,11 @@ void keyboard(GLubyte key, GLint x, GLint y)
 		case 'W':
 			slowDown();
 			break;
+		case 't':
+		case 'T':
+			useVolumetricTexture = !useVolumetricTexture;
+			glutPostRedisplay();
+			cout << "Use volumetric texture: " << useVolumetricTexture << endl;
 		default:
 			break;
 	}
@@ -607,12 +642,17 @@ void init_opengl()
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
+
+	// Textures
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 128, 128, 128, 0, GL_RGB, GL_UNSIGNED_BYTE, volumetricTexture);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
 GLint main(GLint argc, char *argv[])
 {
 	// Check for input file argument
-	string filename = "";
 	if (argc != 2)
 	{
 		filename = "input.t";
@@ -624,8 +664,10 @@ GLint main(GLint argc, char *argv[])
 
 	// Read model from input file
 	readInputFile(filename, numTriangles, numVertices, triangleTable, vertexTable);
+
 	// Read volumetric texture
 	readVolumetricTexture(volumetricTextureFile, volumetricTexture);
+
 	// Calculate normals
 	calcNormals(triangleTable, vertexTable, triangleNormals, vertexNormals);
 	// Calculate bounding box
