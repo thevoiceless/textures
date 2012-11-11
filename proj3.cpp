@@ -28,6 +28,8 @@ static const int MENU_SLOWER = 8;
 static const int MENU_FASTER = 9;
 static const int MENU_STOP_RUN = 10;
 static const double TWOPI = (2.0 * M_PI);
+// 3D texture file name
+string volumetricTextureFile = "marble.rgb";
 // Counters
 int numTriangles = 0;
 int numVertices = 0;
@@ -36,6 +38,8 @@ vector<triangle> triangleTable;
 vector<vertex> vertexTable;
 vector<Vector> triangleNormals;
 vector<Vector> vertexNormals;
+// Array for volumetric texture
+RGB volumetricTexture[128 * 128 * 128];
 // Bounding box
 double xmin, xmax, ymin, ymax, zmin, zmax, maxdim;
 // Field of view angle
@@ -534,7 +538,7 @@ GLint init_glut(GLint *argc, char **argv)
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 
 	// Create a GLUT window (not drawn until glutMainLoop() is entered)
-	id = glutCreateWindow("CSCI441 Project 2");    
+	id = glutCreateWindow("CSCI441 Project 3");    
 
 	// Register callbacks
 	// Window size changes
@@ -618,8 +622,10 @@ GLint main(GLint argc, char *argv[])
 		filename = argv[1];
 	}
 
-	// Read from input file
+	// Read model from input file
 	readInputFile(filename, numTriangles, numVertices, triangleTable, vertexTable);
+	// Read volumetric texture
+	readVolumetricTexture(volumetricTextureFile, volumetricTexture);
 	// Calculate normals
 	calcNormals(triangleTable, vertexTable, triangleNormals, vertexNormals);
 	// Calculate bounding box

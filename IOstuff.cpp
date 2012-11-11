@@ -32,3 +32,14 @@ void readInputFile(string& filename, int numTriangles, int numVertices, vector<t
 
 	inFile.close();
 }
+
+void readVolumetricTexture(string& filename, RGB volumetricTexture[128 * 128 * 128])
+{
+	ifstream inFile(filename.c_str(), ios::binary);
+	if (!inFile.is_open())
+	{
+		cout << "Error reading from " << filename << endl;
+		exit(1);
+	}
+	inFile.read((char*) volumetricTexture, 128 * 128 * 128 * sizeof(RGB));
+}
