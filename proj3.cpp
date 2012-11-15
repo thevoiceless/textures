@@ -15,6 +15,13 @@
 
 using namespace std;
 
+template <typename T, size_t N>
+inline
+size_t SizeOfArray( const T(&)[ N ] )
+{
+  return N;
+}
+
 // OpenGL variables
 static const int VIEWPORT_DEFAULT = 800;
 static const int MENU_TOGGLE_SHADER = 1;
@@ -34,6 +41,7 @@ static const int VOLUMETRIC_SIZE = 128 * 128 * 128;
 string filename = "";
 string volumetricTextureFile = "textures/marble.rgb";
 string environmentTextureFile = "textures/hills_probe.ppm";	// envmap.ppm
+int envResX, envResY;
 RGB* envTexture;
 string tileableTextureFile = "tilable.ppm";
 // Counters
@@ -59,6 +67,7 @@ bool smoothShading = true;
 bool backFaceCulling = true;
 // Which texture to use
 bool useVolumetricTexture = false;
+bool useEnvironmentTexture = false;
 // Centered at the origin
 const Vector center(0, 0, 0);
 // Point under the pixel
@@ -134,6 +143,14 @@ void toggleAnimation()
 void toggleVolumetricTexture()
 {
 	useVolumetricTexture = !useVolumetricTexture;
+	useEnvironmentTexture = false;
+	glutPostRedisplay();
+}
+
+void toggleEnvironmentTexture()
+{
+	useEnvironmentTexture = !useEnvironmentTexture;
+	useVolumetricTexture = false;
 	glutPostRedisplay();
 }
 
@@ -237,13 +254,31 @@ GLuint draw_model_flat()
 		glNormal3f(triangleNormals.at(i).x, triangleNormals.at(i).y, triangleNormals.at(i).z);
 		triangle t(triangleTable.at(i).v1, triangleTable.at(i).v2, triangleTable.at(i).v3);
 
-		glTexCoord3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
+		if (useVolumetricTexture) glTexCoord3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
+		else if (useEnvironmentTexture)
+		{
+			Vector v(vertexNormals.at(t.v1).x, vertexNormals.at(t.v1).y, vertexNormals.at(t.v1).z);
+			double mag = v.magnitude();
+			glTexCoord3f(v.x / mag, v.y / mag, v.z / mag);
+		}
 		glVertex3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
 
-		glTexCoord3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
+		if (useVolumetricTexture) glTexCoord3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
+		else if (useEnvironmentTexture)
+		{
+			Vector v(vertexNormals.at(t.v3).x, vertexNormals.at(t.v3).y, vertexNormals.at(t.v3).z);
+			double mag = v.magnitude();
+			glTexCoord3f(v.x / mag, v.y / mag, v.z / mag);
+		}
 		glVertex3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
 
-		glTexCoord3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
+		if (useVolumetricTexture) glTexCoord3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
+		else if (useEnvironmentTexture)
+		{
+			Vector v(vertexNormals.at(t.v2).x, vertexNormals.at(t.v2).y, vertexNormals.at(t.v2).z);
+			double mag = v.magnitude();
+			glTexCoord3f(v.x / mag, v.y / mag, v.z / mag);
+		}
 		glVertex3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
 	}
 	glEnd();
@@ -258,15 +293,33 @@ GLuint draw_model_smooth()
 	{
 		triangle t(triangleTable.at(i).v1, triangleTable.at(i).v2, triangleTable.at(i).v3);
 
-		glTexCoord3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
+		if (useVolumetricTexture) glTexCoord3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
+		else if (useEnvironmentTexture)
+		{
+			Vector v(vertexNormals.at(t.v1).x, vertexNormals.at(t.v1).y, vertexNormals.at(t.v1).z);
+			double mag = v.magnitude();
+			glTexCoord3f(v.x / mag, v.y / mag, v.z / mag);
+		}
 		glNormal3f(vertexNormals.at(t.v1).x, vertexNormals.at(t.v1).y, vertexNormals.at(t.v1).z);
 		glVertex3f(vertexTable.at(t.v1).x, vertexTable.at(t.v1).y, vertexTable.at(t.v1).z);
 
-		glTexCoord3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
+		if (useVolumetricTexture) glTexCoord3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
+		else if (useEnvironmentTexture)
+		{
+			Vector v(vertexNormals.at(t.v3).x, vertexNormals.at(t.v3).y, vertexNormals.at(t.v3).z);
+			double mag = v.magnitude();
+			glTexCoord3f(v.x / mag, v.y / mag, v.z / mag);
+		}
 		glNormal3f(vertexNormals.at(t.v3).x, vertexNormals.at(t.v3).y, vertexNormals.at(t.v3).z);
 		glVertex3f(vertexTable.at(t.v3).x, vertexTable.at(t.v3).y, vertexTable.at(t.v3).z);
 
-		glTexCoord3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
+		if (useVolumetricTexture) glTexCoord3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
+		else if (useEnvironmentTexture)
+		{
+			Vector v(vertexNormals.at(t.v2).x, vertexNormals.at(t.v2).y, vertexNormals.at(t.v2).z);
+			double mag = v.magnitude();
+			glTexCoord3f(v.x / mag, v.y / mag, v.z / mag);
+		}
 		glNormal3f(vertexNormals.at(t.v2).x, vertexNormals.at(t.v2).y, vertexNormals.at(t.v2).z);
 		glVertex3f(vertexTable.at(t.v2).x, vertexTable.at(t.v2).y, vertexTable.at(t.v2).z);
 	}
@@ -285,9 +338,26 @@ void draw_textures()
 	// Use volumetric (3D) texture
 	if (useVolumetricTexture)
 	{
+		glDisable(GL_TEXTURE_2D);
 		glEnable(GL_TEXTURE_3D);
+
 		glScalef(1.0 / maxdim, 1.0 / maxdim, 1.0 / maxdim);
 		glTranslatef(-xmin, -ymin, -zmin);
+	}
+	else if (useEnvironmentTexture)
+	{
+		glDisable(GL_TEXTURE_3D);
+		glEnable(GL_TEXTURE_2D);
+		// Scale uniformly by 0.5
+		glScalef(0.5, 0.5, 0.5);
+		// Translate by 1, 1, 1
+		glTranslatef(1, 1, 1);
+		// Apply same rotation that is used for model
+		glMultMatrixd(R0);
+		glMultMatrixd(R);
+		glRotatef(angle1, 1, 2, 3);
+		glRotatef(angle2, -2, -1, 0);
+
 	}
 }
 
@@ -296,7 +366,7 @@ GLuint draw_scene()
 {
 	draw_textures();
 
-	set_material_properties(1.0,1.0,1.0);
+	set_material_properties(1.0, 1.0, 1.0);
 
 	// REVERSE ORDER of operations, lower ones done first
 	glPushMatrix();
@@ -308,8 +378,8 @@ GLuint draw_scene()
 		// Rotation matrix (trackball)
 		glMultMatrixd(R0);
 		glMultMatrixd(R);
-		glRotatef(angle1,1,2,3);
-		glRotatef(angle2,-2,-1,0);
+		glRotatef(angle1, 1, 2, 3);
+		glRotatef(angle2, -2, -1, 0);
 		// Translate by minus center of bounding box
 		glTranslatef(-((xmin + xmax) / 2.0), -((ymin + ymax) / 2.0), -((zmin + zmax) / 2.0));
 		if (smoothShading)
@@ -500,6 +570,10 @@ void keyboard(GLubyte key, GLint x, GLint y)
 		case 'T':
 			toggleVolumetricTexture();
 			break;
+		case 'y':
+		case 'Y':
+			toggleEnvironmentTexture();
+			break;
 		default:
 			break;
 	}
@@ -666,7 +740,12 @@ void init_opengl()
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 128, 128, 128, 0, GL_RGB, GL_UNSIGNED_BYTE, volumetricTexture);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, envResX, envResY, 0, GL_RGB, GL_UNSIGNED_BYTE, envTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
 GLint main(GLint argc, char *argv[])
@@ -687,7 +766,7 @@ GLint main(GLint argc, char *argv[])
 	// Read volumetric texture
 	readVolumetricTexture(volumetricTextureFile, volumetricTexture);
 	// Read environment map
-	readPPMTexture(environmentTextureFile, envTexture);
+	readPPMTexture(environmentTextureFile, envTexture, envResX, envResY);
 
 	// Calculate normals
 	calcNormals(triangleTable, vertexTable, triangleNormals, vertexNormals);

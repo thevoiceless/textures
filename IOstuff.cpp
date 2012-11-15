@@ -47,9 +47,8 @@ void readVolumetricTexture(string& filename, RGB volumetricTexture[128 * 128 * 1
 	inFile.close();
 }
 
-void readPPMTexture(string& filename, RGB texture[])
+void readPPMTexture(string& filename, RGB texture[], int& resX, int& resY)
 {
-	int resolution_x, resolution_y;
 	// Open the texture file
 	ifstream inFile(filename.c_str(), ios::binary );
 	if (!inFile.is_open())
@@ -63,7 +62,7 @@ void readPPMTexture(string& filename, RGB texture[])
 	assert(c == 'P');
 	inFile >> c;
 	assert(c == '6');
-	inFile >> resolution_x >> resolution_y;
+	inFile >> resX >> resY;
 	// All images we'll use have 255 color levels
 	int i;
 	inFile >> i;
@@ -71,7 +70,7 @@ void readPPMTexture(string& filename, RGB texture[])
 	// Need to skip one more byte
 	inFile.get();
 	// Allocate space
-	texture = new RGB[resolution_x * resolution_y];
-	inFile.read((char*) texture, resolution_x * resolution_y * sizeof(RGB));
+	texture = new RGB[resX * resY];
+	inFile.read((char*) texture, resX * resY * sizeof(RGB));
 	inFile.close();
 }
