@@ -352,6 +352,7 @@ void draw_textures()
 		glScalef(0.5, 0.5, 0.5);
 		// Translate by 1, 1, 1
 		glTranslatef(1, 1, 1);
+		glScalef(1, -1, 1);
 		// Apply same rotation that is used for model
 		glMultMatrixd(R0);
 		glMultMatrixd(R);

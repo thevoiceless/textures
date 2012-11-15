@@ -71,9 +71,7 @@ RGB* readPPMTexture(string& filename, int& resX, int& resY)
 	// Need to skip one more byte
 	inFile.get();
 	// Allocate space
-	// texture = new RGB[resX * resY];
 	tex = new RGB[resX * resY];
-	// inFile.read((char*) texture, resX * resY * sizeof(RGB));
 	inFile.read((char*) tex, resX * resY * sizeof(RGB));
 	inFile.close();
 	return tex;
