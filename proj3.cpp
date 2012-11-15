@@ -34,16 +34,20 @@ static const int MENU_RESET_ROTATION = 7;
 static const int MENU_SLOWER = 8;
 static const int MENU_FASTER = 9;
 static const int MENU_STOP_RUN = 10;
+static const int MENU_TEX_VOL = 11;
+static const int MENU_TEX_ENV = 12;
+static const int MENU_TEX_TILE = 13;
+static const int MENU_TEX_OFF = 14;
 static const double TWOPI = (2.0 * M_PI);
 // Volumetric texture size
 static const int VOLUMETRIC_SIZE = 128 * 128 * 128;
 // Texture stuff
 string filename = "";
 string volumetricTextureFile = "textures/marble.rgb";
-string environmentTextureFile = "textures/hills_probe.ppm";	// envmap.ppm
+string environmentTextureFile = "textures/envmap.ppm";
 int envResX, envResY;
 RGB* envTexture;
-string tileableTextureFile = "tilable.ppm";
+string tileableTextureFile = "textures/tilable.ppm";
 // Counters
 int numTriangles = 0;
 int numVertices = 0;
@@ -68,6 +72,7 @@ bool backFaceCulling = true;
 // Which texture to use
 bool useVolumetricTexture = false;
 bool useEnvironmentTexture = false;
+bool useTileableTexture = false;
 // Centered at the origin
 const Vector center(0, 0, 0);
 // Point under the pixel
@@ -200,6 +205,13 @@ void resetRotation()
 void freeMemory()
 {
 	delete[] envTexture;
+}
+
+void disableTextures()
+{
+	useVolumetricTexture = false;
+	useEnvironmentTexture = false;
+	glutPostRedisplay();
 }
 
 // Set light source properties
@@ -635,6 +647,17 @@ void menu(int value)
 		case MENU_STOP_RUN:
 			toggleAnimation();
 			break;
+		case MENU_TEX_VOL:
+			toggleVolumetricTexture();
+			break;
+		case MENU_TEX_ENV:
+			toggleEnvironmentTexture();
+			break;
+		case MENU_TEX_TILE:
+			break;
+		case MENU_TEX_OFF:
+			disableTextures();
+			break;
 	}
 }
 
@@ -707,11 +730,18 @@ GLint init_glut(GLint *argc, char **argv)
 	glutAddMenuEntry("Slower (W)", MENU_SLOWER);
 	glutAddMenuEntry("Start/Stop (A)", MENU_STOP_RUN);
 
+	GLint texMenu = glutCreateMenu(menu);
+	glutAddMenuEntry("Volumetric (T)", MENU_TEX_VOL);
+	glutAddMenuEntry("Environment (Y)", MENU_TEX_ENV);
+	glutAddMenuEntry("Tileable on Torus (U)", MENU_TEX_TILE);
+	glutAddMenuEntry("Disable (G)", MENU_TEX_OFF);
+
 	GLint mainMenu = glutCreateMenu(menu);
 	glutAddMenuEntry("Toggle Shading Model (S)", MENU_TOGGLE_SHADER);
 	glutAddMenuEntry("Zoom In (Up Arrow)", MENU_ZOOM_IN);
 	glutAddMenuEntry("Zoom Out (Down Arrow)", MENU_ZOOM_OUT);
 	glutAddMenuEntry("Toggle Culling Orientation (C)", MENU_TOGGLE_CULLING);
+	glutAddSubMenu("Texture", texMenu);
 	glutAddSubMenu("Animation", animMenu);
 	glutAddSubMenu("Reset", resetMenu);
 
@@ -752,13 +782,32 @@ void init_opengl()
 GLint main(GLint argc, char *argv[])
 {
 	// Check for input file argument
-	if (argc != 2)
+	if (argc < 2)
 	{
 		filename = "input.t";
 	}
 	else
 	{
-		filename = argv[1];
+		switch(argc)
+		{
+		case 4:
+			tileableTextureFile = argv[3];
+		case 3:
+			environmentTextureFile = argv[2];
+		case 2:
+			filename = argv[1];
+			break;
+		default:
+			cout << "args: " << argc << endl;
+			cout << "Usage: proj3 [INPUT FILE] [ENV TEXTURE FILE] [TILE TEXTURE FILE]" << endl;
+			cout << "If an argument is specified, all arguments preceding it must also be specified." << endl;
+			cout << "Defaults:" << endl;
+			cout << "\tInput: " << filename << endl;
+			cout << "\tVolumetric texture: " << volumetricTextureFile << endl;
+			cout << "\tEnvironment texture: " << environmentTextureFile << endl;
+			cout << "\tTileable texture: " << tileableTextureFile << endl;
+			break;
+		}
 	}
 
 	// Read model from input file
