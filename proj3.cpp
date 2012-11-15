@@ -28,9 +28,14 @@ static const int MENU_SLOWER = 8;
 static const int MENU_FASTER = 9;
 static const int MENU_STOP_RUN = 10;
 static const double TWOPI = (2.0 * M_PI);
-// File names
+// Volumetric texture size
+static const int VOLUMETRIC_SIZE = 128 * 128 * 128;
+// Texture stuff
 string filename = "";
 string volumetricTextureFile = "textures/marble.rgb";
+string environmentTextureFile = "textures/hills_probe.ppm";	// envmap.ppm
+RGB* envTexture;
+string tileableTextureFile = "tilable.ppm";
 // Counters
 int numTriangles = 0;
 int numVertices = 0;
@@ -40,7 +45,7 @@ vector<vertex> vertexTable;
 vector<Vector> triangleNormals;
 vector<Vector> vertexNormals;
 // Array for volumetric texture
-RGB volumetricTexture[128 * 128 * 128];
+RGB volumetricTexture[VOLUMETRIC_SIZE];
 // Bounding box
 double xmin, xmax, ymin, ymax, zmin, zmax, maxdim;
 // Field of view angle
@@ -126,6 +131,12 @@ void toggleAnimation()
 	glutPostRedisplay();
 }
 
+void toggleVolumetricTexture()
+{
+	useVolumetricTexture = !useVolumetricTexture;
+	glutPostRedisplay();
+}
+
 void zoomIn()
 {
 	if (currentFov / 1.025 > 0.1)
@@ -167,6 +178,11 @@ void resetRotation()
 	setIdentity(R0);
 	animate = false;
 	angle1 = angle2 = 0;
+}
+
+void freeMemory()
+{
+	delete[] envTexture;
 }
 
 // Set light source properties
@@ -257,13 +273,16 @@ GLuint draw_model_smooth()
 	glEnd();
 }
 
+// Draw textures
 void draw_textures()
 {
+	// Disable both by default
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
-
+	// Switch to texture matrix
 	glMatrixMode(GL_TEXTURE);
 	glLoadIdentity();
+	// Use volumetric (3D) texture
 	if (useVolumetricTexture)
 	{
 		glEnable(GL_TEXTURE_3D);
@@ -272,7 +291,7 @@ void draw_textures()
 	}
 }
 
-// All cubes
+// Draw entire scene
 GLuint draw_scene()
 {
 	draw_textures();
@@ -304,7 +323,7 @@ GLuint draw_scene()
 	glPopMatrix();
 }
 
-// Draw callback: clear window, set up matrices, draw all cubes
+// Draw callback: clear window, set up matrices, handle animation, draw scene
 void draw()
 {
 	// Set the projection matrix
@@ -455,6 +474,7 @@ void keyboard(GLubyte key, GLint x, GLint y)
 	{
 		// Exit when escape is pressed
 		case 27:
+			freeMemory();
 			exit(0);
 		case 's':
 		case 'S':
@@ -478,9 +498,8 @@ void keyboard(GLubyte key, GLint x, GLint y)
 			break;
 		case 't':
 		case 'T':
-			useVolumetricTexture = !useVolumetricTexture;
-			glutPostRedisplay();
-			cout << "Use volumetric texture: " << useVolumetricTexture << endl;
+			toggleVolumetricTexture();
+			break;
 		default:
 			break;
 	}
@@ -667,6 +686,8 @@ GLint main(GLint argc, char *argv[])
 
 	// Read volumetric texture
 	readVolumetricTexture(volumetricTextureFile, volumetricTexture);
+	// Read environment map
+	readPPMTexture(environmentTextureFile, envTexture);
 
 	// Calculate normals
 	calcNormals(triangleTable, vertexTable, triangleNormals, vertexNormals);
