@@ -47,8 +47,9 @@ void readVolumetricTexture(string& filename, RGB volumetricTexture[128 * 128 * 1
 	inFile.close();
 }
 
-void readPPMTexture(string& filename, RGB texture[], int& resX, int& resY)
+RGB* readPPMTexture(string& filename, int& resX, int& resY)
 {
+	RGB* tex;
 	// Open the texture file
 	ifstream inFile(filename.c_str(), ios::binary );
 	if (!inFile.is_open())
@@ -70,7 +71,10 @@ void readPPMTexture(string& filename, RGB texture[], int& resX, int& resY)
 	// Need to skip one more byte
 	inFile.get();
 	// Allocate space
-	texture = new RGB[resX * resY];
-	inFile.read((char*) texture, resX * resY * sizeof(RGB));
+	// texture = new RGB[resX * resY];
+	tex = new RGB[resX * resY];
+	// inFile.read((char*) texture, resX * resY * sizeof(RGB));
+	inFile.read((char*) tex, resX * resY * sizeof(RGB));
 	inFile.close();
+	return tex;
 }

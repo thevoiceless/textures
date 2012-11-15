@@ -766,7 +766,7 @@ GLint main(GLint argc, char *argv[])
 	// Read volumetric texture
 	readVolumetricTexture(volumetricTextureFile, volumetricTexture);
 	// Read environment map
-	readPPMTexture(environmentTextureFile, envTexture, envResX, envResY);
+	envTexture = readPPMTexture(environmentTextureFile, envResX, envResY);
 
 	// Calculate normals
 	calcNormals(triangleTable, vertexTable, triangleNormals, vertexNormals);
