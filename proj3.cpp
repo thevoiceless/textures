@@ -15,13 +15,6 @@
 
 using namespace std;
 
-template <typename T, size_t N>
-inline
-size_t SizeOfArray( const T(&)[ N ] )
-{
-  return N;
-}
-
 // OpenGL variables
 static const int VIEWPORT_DEFAULT = 800;
 static const int MENU_TOGGLE_SHADER = 1;
